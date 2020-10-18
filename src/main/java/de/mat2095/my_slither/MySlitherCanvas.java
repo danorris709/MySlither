@@ -199,7 +199,7 @@ final class MySlitherCanvas extends JPanel {
             oldStroke = g.getStroke();
             g.setFont(NAME_FONT.deriveFont((float) (18 / Math.pow(scale, 0.75))));
             model.snakes.values().forEach(snake -> {
-                double thickness = 16 + snake.body.size() / 2.0;
+                double thickness = 16 + snake.body.size() / 4.0;
                 if (snake.body.size() >= 2) {
                     if (thickness > 20) {
                         g.setColor(snake == model.snake ? OWN_LEVEL_ONE_SNAKE_BODY_COLOR : SNAKE_LEVEL_ONE_BODY_COLOR);
