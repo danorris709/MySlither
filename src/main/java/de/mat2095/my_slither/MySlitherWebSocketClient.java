@@ -11,11 +11,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.Deque;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.EvictingQueue;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
@@ -28,6 +27,7 @@ final class MySlitherWebSocketClient extends WebSocketClient {
     private static final byte[] DATA_BOOST_START = new byte[]{(byte) 253};
     private static final byte[] DATA_BOOST_STOP = new byte[]{(byte) 254};
     private static final double ANGLE_CONSTANT = 16777215;
+    private static final int MAX_PING_QUEUE = 15;
 
     private final MySlitherJFrame view;
     private MySlitherModel model;
@@ -37,6 +37,8 @@ final class MySlitherWebSocketClient extends WebSocketClient {
     private byte lastAngleContent, angleToBeSent;
     private boolean lastBoostContent;
     private boolean waitingForPong;
+    @SuppressWarnings("UnstableApiUsage")
+    private Queue<Long> pings = EvictingQueue.create(MAX_PING_QUEUE);
 
     static {
         HEADER.put("Origin", "http://slither.io");
@@ -45,7 +47,7 @@ final class MySlitherWebSocketClient extends WebSocketClient {
     }
 
     MySlitherWebSocketClient(URI serverUri, MySlitherJFrame view) {
-        super(serverUri, new Draft_6455(), HEADER);
+        super(serverUri, new Draft_6455(), HEADER, 1000);
         this.view = view;
     }
 
@@ -509,7 +511,21 @@ final class MySlitherWebSocketClient extends WebSocketClient {
             return;
         }
 
+        this.pings.add(System.currentTimeMillis() - this.lastPingTime);
+        this.view.setPing(this.getAveragePing());
         waitingForPong = false;
+    }
+
+    private float getAveragePing() {
+        float totalPing = 0;
+        Long[] pings = this.pings.toArray(new Long[0]);
+        int amount = Math.min(this.pings.size(), MAX_PING_QUEUE);
+
+        for (int i = 0; i < amount; i++) {
+            totalPing += pings[i];
+        }
+
+        return totalPing / amount;
     }
 
     private void processUpdateMinimap(int[] data) {
@@ -568,6 +584,7 @@ final class MySlitherWebSocketClient extends WebSocketClient {
             for (int nextBodyPartStartPosition = nameLength + customSkinDataLength + 32; nextBodyPartStartPosition + 1 < data.length; nextBodyPartStartPosition += 2) {
                 currentBodyPartX += (data[nextBodyPartStartPosition] - 127) / 2.0;
                 currentBodyPartY += (data[nextBodyPartStartPosition + 1] - 127) / 2.0;
+
                 body.addFirst(new SnakeBodyPart(currentBodyPartX, currentBodyPartY));
             }
 

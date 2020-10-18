@@ -17,7 +17,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 final class MySlitherJFrame extends JFrame {
 
-    private static final String[] SNAKES = {
+    public static final String[] SNAKES = {
         "00 - purple",
         "01 - blue",
         "02 - cyan",
@@ -91,7 +91,7 @@ final class MySlitherJFrame extends JFrame {
     private final JComboBox<String> snake;
     private final JCheckBox useRandomServer;
     private final JToggleButton connect;
-    private final JLabel rank, kills;
+    private final JLabel rank, kills, ping;
     private final JSplitPane rightSplitPane, fullSplitPane;
     private final JTextArea log;
     private final JScrollBar logScrollBar;
@@ -178,6 +178,8 @@ final class MySlitherJFrame extends JFrame {
 
         rank = new JLabel();
 
+        ping = new JLabel();
+
         kills = new JLabel();
 
         settings.add(new JLabel("server:"),
@@ -206,13 +208,17 @@ final class MySlitherJFrame extends JFrame {
             new GridBagConstraints(4, 2, 1, 1, 0, 0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
         settings.add(rank,
             new GridBagConstraints(5, 2, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+        settings.add(new JLabel("ping:"),
+            new GridBagConstraints(4, 3, 1, 1, 0, 0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+        settings.add(ping,
+            new GridBagConstraints(5, 3, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
 
         JComponent upperRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
         upperRow.add(settings);
         getContentPane().add(upperRow, BorderLayout.NORTH);
 
         // === center ===
-        log = new JTextArea("hi");
+        log = new JTextArea("");
         log.setEditable(false);
         log.setLineWrap(true);
         log.setFont(Font.decode("Monospaced 11"));
@@ -390,7 +396,7 @@ final class MySlitherJFrame extends JFrame {
         snake.setEnabled(status.allowModifyData);
     }
 
-    void log(String text) {
+    public void log(String text) {
         print(String.format("%6d\t%s", System.currentTimeMillis() - startTime, text));
     }
 
@@ -409,6 +415,7 @@ final class MySlitherJFrame extends JFrame {
         synchronized (modelLock) {
             this.model = model;
             rank.setText(null);
+            ping.setText(null);
             kills.setText(null);
         }
     }
@@ -419,6 +426,10 @@ final class MySlitherJFrame extends JFrame {
 
     void setRank(int newRank, int playerCount) {
         rank.setText(newRank + "/" + playerCount);
+    }
+
+    void setPing(float ping) {
+        this.ping.setText(String.format("%.2f", ping));
     }
 
     void setKills(int newKills) {
